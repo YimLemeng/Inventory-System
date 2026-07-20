@@ -98,14 +98,18 @@
     <Compile Include="BLL\CustomerBLL.cs" />
     <Compile Include="BLL\PaymentMethodBLL.cs" />
     <Compile Include="BLL\ProductBLL.cs" />
+    <Compile Include="BLL\PurchaseBLL.cs" />
     <Compile Include="BLL\ReceiptBLL.cs" />
     <Compile Include="BLL\ReportBLL.cs" />
     <Compile Include="BLL\StockInBLL.cs" />
     <Compile Include="BLL\StockOutBLL.cs" />
     <Compile Include="BLL\SupplierBLL.cs" />
     <Compile Include="BLL\UserBLL.cs" />
+    <Compile Include="DAL\PurchaseDAL.cs" />
     <Compile Include="DAL\ReportDAL.cs" />
     <Compile Include="DAL\UserDAL.cs" />
+    <Compile Include="Entity\Purchase.cs" />
+    <Compile Include="Entity\PurchaseDetail.cs" />
     <Compile Include="Entity\User.cs" />
     <Compile Include="Form\CategoryFrm.cs">
       <SubType>Form</SubType>
@@ -188,6 +192,12 @@
       <DesignTime>True</DesignTime>
       <DependentUpon>Resources.resx</DependentUpon>
     </Compile>
+    <Compile Include="Form\PurchaseFrm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Form\PurchaseFrm.Designer.cs">
+      <DependentUpon>PurchaseFrm.cs</DependentUpon>
+    </Compile>
     <Compile Include="ThemColor.cs" />
     <EmbeddedResource Include="Form\CategoryFrm.resx">
       <DependentUpon>CategoryFrm.cs</DependentUpon>
@@ -220,6 +230,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="Form\ReportFrm.resx">
       <DependentUpon>ReportFrm.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Form\PurchaseFrm.resx">
+      <DependentUpon>PurchaseFrm.cs</DependentUpon>
     </EmbeddedResource>
     <None Include="packages.config" />
     <None Include="Properties\Settings.settings">

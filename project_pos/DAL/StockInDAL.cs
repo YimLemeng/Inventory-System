@@ -1,6 +1,7 @@
 ﻿using project_pos.Entity;
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Data.SqlClient;
 using System.Linq;
 using System.Text;
@@ -60,6 +61,41 @@ namespace project_pos.DAL
                            ORDER BY s.StockInDate DESC";
             var cmd = new SqlCommand(sql, con);
             con.Open();
+            var reader = cmd.ExecuteReader();
+            while (reader.Read())
+            {
+                list.Add(new StockIn
+                {
+                    Id = (int)reader["StockInId"],
+                    ProductId = (int)reader["ProductId"],
+                    ProductName = reader["ProductName"].ToString(),
+                    Qty = (int)reader["Qty"],
+                    UnitCost = Convert.ToDecimal(reader["UnitCost"]),
+                    SupplierId = reader["SupplierId"] == DBNull.Value ? (int?)null : (int)reader["SupplierId"],
+                    SupplierName = reader["SupplierName"] == DBNull.Value ? "" : reader["SupplierName"].ToString(),
+                    StockInDate = (DateTime)reader["StockInDate"],
+                    Note = reader["Note"] == DBNull.Value ? "" : reader["Note"].ToString()
+                });
+            }
+            con.Close();
+            return list;
+        }
+
+        public List<StockIn> Search(string keyword)
+        {
+            var list = new List<StockIn>();
+            string sql = @"SELECT s.StockInId, s.ProductId, p.ProductName, s.Qty, s.UnitCost, 
+                                  s.SupplierId, sup.SupplierName, s.StockInDate, s.Note
+                           FROM StockIn s
+                           JOIN Products p ON s.ProductId = p.ProductID
+                           LEFT JOIN Suppliers sup ON s.SupplierId = sup.SupplierId
+                           WHERE p.ProductName LIKE @Key 
+                              OR sup.SupplierName LIKE @Key 
+                              OR CAST(s.StockInId AS NVARCHAR) LIKE @Key
+                           ORDER BY s.StockInDate DESC";
+            var cmd = new SqlCommand(sql, con);
+            cmd.Parameters.AddWithValue("@Key", "%" + keyword + "%");
+            if (con.State == ConnectionState.Closed) con.Open();
             var reader = cmd.ExecuteReader();
             while (reader.Read())
             {

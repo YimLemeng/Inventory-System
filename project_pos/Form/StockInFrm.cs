@@ -14,95 +14,56 @@ namespace project_pos
 {
     public partial class StockInFrm : Form
     {
-        private readonly ProductBLL _productBLL = new ProductBLL();
-        private readonly SupplierBLL _supplierBLL = new SupplierBLL();
         private readonly StockInBLL _stockInBLL = new StockInBLL();
         public StockInFrm()
         {
             InitializeComponent();
-            cboProduct.DropDownStyle = ComboBoxStyle.DropDownList;
-            cboSupplier.DropDownStyle = ComboBoxStyle.DropDownList;
-            LoadProducts();
             LoadStockInRecords();
-            LoadSuppliers();
         }
 
-        private void LoadProducts()
-        {
-            cboProduct.DataSource = _productBLL.GetAllProducts();
-            cboProduct.DisplayMember = "ProductName";
-            cboProduct.ValueMember = "ProductId";
-            cboProduct.SelectedIndex = -1;
-        }
-
-        private void LoadSuppliers()
+        public void LoadStockInRecords()
         {
             try
             {
-                cboSupplier.DisplayMember = "SupplierName";
-                cboSupplier.ValueMember = "SupplierId";
-                cboSupplier.DataSource = _supplierBLL.GetAllSuppliers().Tables[0];
-                cboSupplier.SelectedIndex = -1;
+                dgvStockIn.DataSource = null;
+                dgvStockIn.DataSource = _stockInBLL.GetAllStockIns();
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Error: " + ex.Message);
+                MessageBox.Show("Error loading stock in records: " + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
 
-        private void LoadStockInRecords()
+        private void button1_Click(object sender, EventArgs e)
         {
-            dgvStockIn.DataSource = null;
-            dgvStockIn.DataSource = _stockInBLL.GetAllStockIns();
+            PerformSearch();
         }
-
-        private void btnSave_Click(object sender, EventArgs e)
+        private void PerformSearch()
         {
             try
             {
-                if (cboProduct.SelectedIndex == -1)
+                string keyword = txtSearch.Text.Trim();
+                if (string.IsNullOrEmpty(keyword))
                 {
-                    MessageBox.Show("Please select a product.");
-                    return;
+                    LoadStockInRecords(); 
                 }
-                StockIn si = new StockIn
+                else
                 {
-                    ProductId = Convert.ToInt32(cboProduct.SelectedValue),
-                    Qty = int.TryParse(txtQty.Text, out int q) ? q : 0,
-                    UnitCost = decimal.TryParse(txtUnit.Text, out decimal c) ? c : 0,
-                    SupplierId = cboSupplier.SelectedIndex == -1 ? (int?)null : Convert.ToInt32(cboSupplier.SelectedValue),
-                    Note = txtNote.Text.Trim(),
-                    StockInDate = DateTime.Now
-                };
-                if (_stockInBLL.Save(si))
-                {
-                    MessageBox.Show("Stock In saved successfully!");
-                    LoadStockInRecords();
-                    ClearForm();
+                    dgvStockIn.DataSource = null;
+                    dgvStockIn.DataSource = _stockInBLL.SearchStockIn(keyword);
                 }
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Error: " + ex.Message);
+                MessageBox.Show("Search Error: " + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
-
         }
 
-        private void btnClear_Click(object sender, EventArgs e) => ClearForm();
-        private void ClearForm()
+        private void txtSearch_KeyDown(object sender, KeyEventArgs e)
         {
-            cboProduct.SelectedIndex = -1;
-            txtQty.Clear();
-            txtUnit.Clear();
-            cboSupplier.SelectedIndex = -1;
-            txtNote.Clear();
-        }
-
-        private void txtQty_KeyPress(object sender, KeyPressEventArgs e)
-        {
-            if (!char.IsControl(e.KeyChar) && !char.IsDigit(e.KeyChar))
+            if (e.KeyCode == Keys.Enter)
             {
-                e.Handled = true;
+                PerformSearch();
             }
         }
     }

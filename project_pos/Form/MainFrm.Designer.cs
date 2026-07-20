@@ -222,7 +222,7 @@
             this.btnPayment.Padding = new System.Windows.Forms.Padding(12, 0, 0, 0);
             this.btnPayment.Size = new System.Drawing.Size(340, 100);
             this.btnPayment.TabIndex = 2;
-            this.btnPayment.Text = "Payment";
+            this.btnPayment.Text = "Porchases";
             this.btnPayment.UseVisualStyleBackColor = true;
             this.btnPayment.Click += new System.EventHandler(this.btnPayment_Click);
             // 

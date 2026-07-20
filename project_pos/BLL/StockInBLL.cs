@@ -20,5 +20,6 @@ namespace project_pos.BLL
         }
 
         public List<StockIn> GetAllStockIns() => _stockInDAL.GetAllStockIn();
+        public List<StockIn> SearchStockIn(string keyword) => _stockInDAL.Search(keyword);
     }
 }

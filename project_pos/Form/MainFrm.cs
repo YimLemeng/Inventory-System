@@ -20,7 +20,7 @@ namespace project_pos
         public MainFrm(string username)
         {
             InitializeComponent();
-            btnPayment.Visible = false;
+            //btnPayment.Visible = false;
             toolUser.Text = username;
             random = new Random();
             btnCloseChildForm.Visible = false;
@@ -96,7 +96,7 @@ namespace project_pos
 
         private void btnPayment_Click(object sender, EventArgs e)
         {
-            OpenChildForm(new PosPaymentFrm(), sender);
+            OpenChildForm(new PurchaseFrm(), sender);
         }
 
         private void btnCloseChildForm_Click(object sender, EventArgs e)

@@ -27,7 +27,7 @@ namespace project_pos
             try
             {
                 dgvSupplier.DataSource = null;
-                dgvSupplier.DataSource = _supplierBLL.GetAllSuppliers().Tables[0];
+                dgvSupplier.DataSource = _supplierBLL.GetAllSuppliers();
             }
             catch (Exception ex)
             {

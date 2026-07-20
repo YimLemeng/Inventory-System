@@ -24,6 +24,6 @@ namespace project_pos.BLL
             return _supplierDAL.Update(sup);
         }
         public bool Delete(int id) => _supplierDAL.Delete(id);
-        public DataSet GetAllSuppliers() => _supplierDAL.GetAllSupplier();
+        public DataTable GetAllSuppliers() => _supplierDAL.GetAllSupplier().Tables[0];
     }
 }
