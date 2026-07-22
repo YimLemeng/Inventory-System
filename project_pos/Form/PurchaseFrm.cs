@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
+using System.Data.SqlClient;
 using System.Drawing;
 using System.Linq;
 using System.Text;
@@ -59,6 +60,11 @@ namespace project_pos
 
         private void btnSave_Click(object sender, EventArgs e)
         {
+            if (cboSupplier.SelectedIndex == -1)
+            {
+                MessageBox.Show("Please select a supplier for this item.", "Validation", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
             if (cboProduct.SelectedIndex == -1)
             {
                 MessageBox.Show("Please select a product.", "Validation", MessageBoxButtons.OK, MessageBoxIcon.Warning);
@@ -74,27 +80,24 @@ namespace project_pos
                 MessageBox.Show("Please enter a valid unit cost.", "Validation", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
+            // ទាញយក ID & Name របស់ Product និង Supplier
             int productId = Convert.ToInt32(cboProduct.SelectedValue);
             DataRowView selectedProduct = (DataRowView)cboProduct.SelectedItem;
             string productName = selectedProduct["ProductName"].ToString();
-            // បើទំនិញមានក្នុង Cart រួចហើយ គ្រាន់តែបូកថែម Qty
-            var existingItem = _purchaseCart.FirstOrDefault(x => x.ProductId == productId);
-            if (existingItem != null)
+            int supplierId = Convert.ToInt32(cboSupplier.SelectedValue);
+            DataRowView selectedSupplier = (DataRowView)cboSupplier.SelectedItem;
+            string supplierName = selectedSupplier["SupplierName"].ToString();
+            // បន្ថែមចូល Cart ដោយភ្ជាប់ SupplierId របស់ Item នោះស្រាប់
+            _purchaseCart.Add(new StockIn
             {
-                existingItem.Qty += qty;
-                existingItem.UnitCost = unitCost; // អាប់ដេតតម្លៃដើមថ្មី
-            }
-            else
-            {
-                _purchaseCart.Add(new StockIn
-                {
-                    ProductId = productId,
-                    ProductName = productName,
-                    Qty = qty,
-                    UnitCost = unitCost,
-                    Note = txtNote.Text.Trim()
-                });
-            }
+                ProductId = productId,
+                ProductName = productName,
+                SupplierId = supplierId,
+                SupplierName = supplierName, // ភ្ជាប់ឈ្មោះ Supplier ជាមួយ Item នេះ
+                Qty = qty,
+                UnitCost = unitCost,
+                Note = txtNote.Text.Trim()
+            });
             RefreshCart();
             txtQty.Clear();
             txtUnit.Clear();
@@ -142,30 +145,35 @@ namespace project_pos
                     MessageBox.Show("Purchase cart is empty.", "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                     return;
                 }
-                if (cboSupplier.SelectedIndex == -1 || cboSupplier.SelectedValue == null)
+                // 1. បង្កើត Purchase Header
+                Purchase purchase = new Purchase
                 {
-                    MessageBox.Show("Please select a supplier.", "Validation", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                    return;
-                }
-                int supplierId = Convert.ToInt32(cboSupplier.SelectedValue);
-                int successCount = 0;
-                // រក្សាទុកគ្រប់ Item ក្នុង Cart ចូលតារាង StockIn (StockInDAL នឹង Auto Update StockQty ក្នុង Products)
-                foreach (var item in _purchaseCart)
+                    SupplierId = _purchaseCart.First().SupplierId ?? 0,
+                    PurchaseDate = DateTime.Now,
+                    TotalAmount = _purchaseCart.Sum(x => x.Qty * x.UnitCost),
+                    Note = _purchaseCart.FirstOrDefault()?.Note ?? ""
+                };
+                // 2. បំលែង Cart ទៅជា List<PurchaseDetail>
+                List<PurchaseDetail> details = _purchaseCart.Select(item => new PurchaseDetail
                 {
-                    item.SupplierId = supplierId;
-                    item.StockInDate = DateTime.Now;
-                    if (_stockInBLL.Save(item))
-                    {
-                        successCount++;
-                    }
-                }
-                if (successCount > 0)
+                    ProductId = item.ProductId,
+                    SupplierId = item.SupplierId ?? 0,
+                    Qty = item.Qty,
+                    UnitCost = item.UnitCost,
+                    LineTotal = item.Qty * item.UnitCost
+                }).ToList();
+                // 3. ហៅ PurchaseBLL រក្សាទុក (ចូល Purchases, PurchaseDetails, StockIn & Products Stock)
+                PurchaseBLL purchaseBLL = new PurchaseBLL();
+                int newPurchaseId = purchaseBLL.SavePurchase(purchase, details);
+                if (newPurchaseId > 0)
                 {
-                    MessageBox.Show($"Purchase completed successfully!\n{successCount} item(s) added to StockIn & Product stock updated automatically.", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    MessageBox.Show($"Purchase #{newPurchaseId} saved successfully!\nData saved to Purchases, PurchaseDetails & StockIn tables.", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
+
                     _purchaseCart.Clear();
                     RefreshCart();
                     cboSupplier.SelectedIndex = -1;
                     cboProduct.SelectedIndex = -1;
+                    txtNote.Clear();
                 }
             }
             catch (Exception ex)

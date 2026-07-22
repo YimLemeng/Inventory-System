@@ -74,7 +74,7 @@ namespace project_pos
             }
         }
 
-        private void OpenChildForm(Form childForm, object btnSender)
+        public void OpenChildForm(Form childForm, object btnSender)
         {
             if(activeForm != null) activeForm.Close();
             ActivateButton(btnSender);
@@ -136,7 +136,7 @@ namespace project_pos
 
         private void btnReport_Click(object sender, EventArgs e)
         {
-            OpenChildForm(new ReportFrm(), sender);
+            OpenChildForm(new PurchaseReportFrm(), sender);
         }
 
         private void button1_Click(object sender, EventArgs e)

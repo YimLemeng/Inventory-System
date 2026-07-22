@@ -29,7 +29,6 @@ namespace project_pos.DAL
                 cmd.Parameters.AddWithValue("@Note", (object)stockIn.Note ?? DBNull.Value);
                 int rows = cmd.ExecuteNonQuery();
 
-                // ✅ បន្ថែម Stock ចូល Products ភ្លាមៗ ក្នុង transaction តែមួយ
                 string sqlUpdate = "UPDATE Products SET StockQty = StockQty + @Qty WHERE ProductId = @ProductId";
                 SqlCommand cmdUpdate = new SqlCommand(sqlUpdate, con, transaction);
                 cmdUpdate.Parameters.AddWithValue("@Qty", stockIn.Qty);
@@ -52,32 +51,36 @@ namespace project_pos.DAL
 
         public List<StockIn> GetAllStockIn()
         {
-            var list = new List<StockIn>();
-            string sql = @"SELECT s.StockInId, s.ProductId, p.ProductName, s.Qty, s.UnitCost, 
-                          s.SupplierId, sup.SupplierName, s.StockInDate, s.Note
-                           FROM StockIn s
-                           JOIN Products p ON s.ProductId = p.ProductID
-                           LEFT JOIN Suppliers sup ON s.SupplierId = sup.SupplierId
-                           ORDER BY s.StockInDate DESC";
-            var cmd = new SqlCommand(sql, con);
-            con.Open();
-            var reader = cmd.ExecuteReader();
-            while (reader.Read())
+            List<StockIn> list = new List<StockIn>();
+            string query = @"SELECT s.StockInId AS Id, s.ProductId, p.ProductName, s.Qty, s.UnitCost, s.SupplierId, sup.SupplierName, s.StockInDate, s.Note
+                     FROM StockIn s
+                     JOIN Products p ON s.ProductId = p.ProductID
+                     LEFT JOIN Suppliers sup ON s.SupplierId = sup.SupplierId
+                     ORDER BY s.StockInDate DESC";
+
+            using (SqlCommand cmd = new SqlCommand(query, con))
             {
-                list.Add(new StockIn
+                if (con.State == ConnectionState.Closed) con.Open();
+                using (SqlDataReader reader = cmd.ExecuteReader())
                 {
-                    Id = (int)reader["StockInId"],
-                    ProductId = (int)reader["ProductId"],
-                    ProductName = reader["ProductName"].ToString(),
-                    Qty = (int)reader["Qty"],
-                    UnitCost = Convert.ToDecimal(reader["UnitCost"]),
-                    SupplierId = reader["SupplierId"] == DBNull.Value ? (int?)null : (int)reader["SupplierId"],
-                    SupplierName = reader["SupplierName"] == DBNull.Value ? "" : reader["SupplierName"].ToString(),
-                    StockInDate = (DateTime)reader["StockInDate"],
-                    Note = reader["Note"] == DBNull.Value ? "" : reader["Note"].ToString()
-                });
+                    while (reader.Read())
+                    {
+                        list.Add(new StockIn
+                        {
+                            Id = Convert.ToInt32(reader["Id"]),
+                            ProductId = Convert.ToInt32(reader["ProductId"]),
+                            ProductName = reader["ProductName"].ToString(),
+                            Qty = Convert.ToInt32(reader["Qty"]),
+                            UnitCost = Convert.ToDecimal(reader["UnitCost"]),
+                            SupplierId = Convert.ToInt32(reader["SupplierId"]),
+                            SupplierName = reader["SupplierName"].ToString(),
+                            StockInDate = Convert.ToDateTime(reader["StockInDate"]),
+                            Note = reader["Note"] != DBNull.Value ? reader["Note"].ToString() : ""
+                        });
+                    }
+                }
+                con.Close();
             }
-            con.Close();
             return list;
         }
 

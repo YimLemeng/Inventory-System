@@ -15,30 +15,34 @@ namespace project_pos.DAL
         {
             if (con.State == ConnectionState.Closed) con.Open();
             SqlTransaction transaction = con.BeginTransaction();
+
             try
             {
-                // ក. បញ្ចូល Header (Purchases)
                 string sqlPurchase = @"INSERT INTO Purchases (SupplierId, PurchaseDate, TotalAmount, Note) 
-                                       VALUES (@SupplierId, @PurchaseDate, @TotalAmount, @Note); 
-                                       SELECT SCOPE_IDENTITY();";
+                               VALUES (@SupplierId, @PurchaseDate, @TotalAmount, @Note); 
+                               SELECT SCOPE_IDENTITY();";
+
                 SqlCommand cmdPurchase = new SqlCommand(sqlPurchase, con, transaction);
                 cmdPurchase.Parameters.AddWithValue("@SupplierId", purchase.SupplierId);
                 cmdPurchase.Parameters.AddWithValue("@PurchaseDate", purchase.PurchaseDate == default ? DateTime.Now : purchase.PurchaseDate);
                 cmdPurchase.Parameters.AddWithValue("@TotalAmount", purchase.TotalAmount);
-                cmdPurchase.Parameters.AddWithValue("@Note", (object)purchase.Note ?? DBNull.Value);
+                cmdPurchase.Parameters.AddWithValue("@Note", string.IsNullOrWhiteSpace(purchase.Note) ? (object)DBNull.Value : purchase.Note);
                 int purchaseId = Convert.ToInt32(cmdPurchase.ExecuteScalar());
-                // ខ. បញ្ចូល Details & គណនាបន្ថែមស្តុក (UPDATE StockQty)
-                string sqlDetail = @"INSERT INTO PurchaseDetails (PurchaseId, ProductId, Qty, UnitCost, LineTotal) 
-                                     VALUES (@PurchaseId, @ProductId, @Qty, @UnitCost, @LineTotal)";
 
-                string sqlUpdateStock = @"UPDATE Products 
-                                          SET StockQty = StockQty + @Qty 
-                                          WHERE ProductID = @ProductId";
+                string sqlDetail = @"INSERT INTO PurchaseDetails (PurchaseId, ProductId, Qty, UnitCost, LineTotal) 
+                             VALUES (@PurchaseId, @ProductId, @Qty, @UnitCost, @LineTotal)";
+
+                string sqlStockIn = @"INSERT INTO StockIn (ProductId, Qty, UnitCost, SupplierId, StockInDate, Note) 
+                              VALUES (@ProductId, @Qty, @UnitCost, @SupplierId, @StockInDate, @Note)";
+
+                string sqlUpdateStock = @"UPDATE Products SET StockQty = StockQty + @Qty WHERE ProductID = @ProductId";
+
                 SqlCommand cmdDetail = new SqlCommand(sqlDetail, con, transaction);
+                SqlCommand cmdStockIn = new SqlCommand(sqlStockIn, con, transaction);
                 SqlCommand cmdUpdateStock = new SqlCommand(sqlUpdateStock, con, transaction);
+
                 foreach (var detail in details)
                 {
-                    // បញ្ចូល PurchaseDetails
                     cmdDetail.Parameters.Clear();
                     cmdDetail.Parameters.AddWithValue("@PurchaseId", purchaseId);
                     cmdDetail.Parameters.AddWithValue("@ProductId", detail.ProductId);
@@ -46,12 +50,22 @@ namespace project_pos.DAL
                     cmdDetail.Parameters.AddWithValue("@UnitCost", detail.UnitCost);
                     cmdDetail.Parameters.AddWithValue("@LineTotal", detail.LineTotal);
                     cmdDetail.ExecuteNonQuery();
-                    // អាប់ដេតបន្ថែមស្តុកក្នុង Products ដោយស្វ័យប្រវត្តិ
+
+                    cmdStockIn.Parameters.Clear();
+                    cmdStockIn.Parameters.AddWithValue("@ProductId", detail.ProductId);
+                    cmdStockIn.Parameters.AddWithValue("@Qty", detail.Qty);
+                    cmdStockIn.Parameters.AddWithValue("@UnitCost", detail.UnitCost);
+                    cmdStockIn.Parameters.AddWithValue("@SupplierId", detail.SupplierId > 0 ? (object)detail.SupplierId : DBNull.Value);
+                    cmdStockIn.Parameters.AddWithValue("@StockInDate", purchase.PurchaseDate);
+                    cmdStockIn.Parameters.AddWithValue("@Note", string.IsNullOrWhiteSpace(purchase.Note) ? (object)DBNull.Value : purchase.Note);
+                    cmdStockIn.ExecuteNonQuery();
+
                     cmdUpdateStock.Parameters.Clear();
                     cmdUpdateStock.Parameters.AddWithValue("@Qty", detail.Qty);
                     cmdUpdateStock.Parameters.AddWithValue("@ProductId", detail.ProductId);
                     cmdUpdateStock.ExecuteNonQuery();
                 }
+
                 transaction.Commit();
                 return purchaseId;
             }
@@ -65,10 +79,9 @@ namespace project_pos.DAL
                 con.Close();
             }
         }
-        // ២. ទាញយកបញ្ជី Purchases ទាំងអស់ (កែត្រង់ List<Purchase> ឱ្យត្រូវ)
         public List<Purchase> GetAllPurchases()
         {
-            var list = new List<Purchase>(); // <-- កែទៅជា Purchase មិនមែន PurchaseFrm ទេ
+            var list = new List<Purchase>();
             string sql = @"SELECT p.PurchaseId, p.SupplierId, s.SupplierName, p.PurchaseDate, p.TotalAmount, p.Note 
                            FROM Purchases p
                            JOIN Suppliers s ON p.SupplierId = s.SupplierId
@@ -82,7 +95,7 @@ namespace project_pos.DAL
                 {
                     while (reader.Read())
                     {
-                        list.Add(new Purchase // <-- កែទៅជា new Purchase
+                        list.Add(new Purchase
                         {
                             Id = Convert.ToInt32(reader["PurchaseId"]),
                             SupplierId = Convert.ToInt32(reader["SupplierId"]),
@@ -104,7 +117,6 @@ namespace project_pos.DAL
             }
             return list;
         }
-        // ៣. ទាញយក Details តាម PurchaseId
         public List<PurchaseDetail> GetPurchaseDetails(int purchaseId)
         {
             var list = new List<PurchaseDetail>();

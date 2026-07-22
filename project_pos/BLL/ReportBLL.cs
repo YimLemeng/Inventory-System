@@ -17,6 +17,7 @@ namespace project_pos.BLL
             return _dal.GetSalesReport(from, to).Tables[0];
         }
         public DataTable GetInventoryAlertReport() => _dal.GetInventoryAlertReport().Tables[0];
+        public DataSet GetPurchaseReportData(DateTime fromDate, DateTime toDate) => _dal.GetPurchaseReportData(fromDate, toDate);
     }
 
 }

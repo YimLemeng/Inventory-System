@@ -47,5 +47,29 @@ namespace project_pos.DAL
                 throw new Exception("Error fetching inventory alert report: " + ex.Message);
             }
         }
+        public DataSet GetPurchaseReportData(DateTime fromDate, DateTime toDate)
+        {
+            // ចោះស្វែងរកតាមចន្លោះថ្ងៃខែពី @FromDate ដល់ @ToDate
+            string query = @"SELECT * FROM vw_PurchaseReport 
+                     WHERE PurchaseDate >= @FromDate AND PurchaseDate <= @ToDate 
+                     ORDER BY PurchaseDate DESC";
+            DataSet ds = new DataSet();
+            try
+            {
+                if (con.State == ConnectionState.Closed) con.Open();
+                using (SqlCommand cmd = new SqlCommand(query, con))
+                {
+                    cmd.Parameters.AddWithValue("@FromDate", fromDate.Date);
+                    cmd.Parameters.AddWithValue("@ToDate", toDate.Date.AddDays(1).AddSeconds(-1)); // ដល់ម៉ោង 23:59:59 នៃថ្ងៃទី២
+
+                    using (SqlDataAdapter da = new SqlDataAdapter(cmd))
+                    {
+                        da.Fill(ds);
+                    }
+                }
+            }
+            finally { con.Close(); }
+            return ds;
+        }
     }
 }
