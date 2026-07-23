@@ -1,1 +1,4 @@
-project_pos/App.config 
+.vs/ 
+bin/ 
+obj/ 
+*.user 

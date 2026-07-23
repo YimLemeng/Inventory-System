@@ -55,8 +55,6 @@ namespace project_pos
                     currentButton.BackColor = color;
                     currentButton.ForeColor = Color.White;
                     currentButton.Font = new System.Drawing.Font("Microsoft Sans Serif", 12.5F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-                    panelTitleBar.BackColor = color;
-                    panelLogo.BackColor = ThemColor.ChangeColorBrightness(color, -0.3);
                     btnCloseChildForm.Visible = true;
                 }
             }
@@ -108,7 +106,7 @@ namespace project_pos
         {
             DisableButton();
             lblTitle.Text = "Dashboard";
-            panelTitleBar.BackColor = Color.FromArgb(0, 150, 136);
+            panelTitleBar.BackColor = panelMenu.BackColor;
             panelLogo.BackColor = Color.FromArgb(39, 39, 58);
             currentButton = null;
             btnCloseChildForm.Visible = false;
@@ -155,11 +153,6 @@ namespace project_pos
             LoginFrm login = new LoginFrm();
             this.Hide();
             login.ShowDialog();
-        }
-
-        private void panelDesktop_Paint(object sender, PaintEventArgs e)
-        {
-
         }
     }
 }

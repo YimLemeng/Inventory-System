@@ -29,20 +29,13 @@ namespace project_pos
         {
             try
             {
-                // ១. ហៅ BLL ផ្ទៀងផ្ទាត់គណនី
                 User loggedInUser = _userBLL.AuthenticateUser(txtUsername.Text, txtPassword.Text);
                 if (loggedInUser != null)
                 {
                     MessageBox.Show($"Welcome, {loggedInUser.FullName}!", "Login Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
-
-                    // ២. បង្កើត Form មេ (MainFrm)
                     MainFrm main = new MainFrm(txtUsername.Text);
-
-                    // លាក់ Form Login នេះ រួចបង្ហាញ Form មេ
                     this.Hide();
                     main.ShowDialog();
-
-                    // បិទកម្មវិធីទាំងស្រុង ពេលគេបិទ MainFrm ចោល
                     this.Close();
                 }
                 else
