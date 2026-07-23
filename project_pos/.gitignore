@@ -1,0 +1,12 @@
+﻿# Cache & Output Folders
+.vs/
+bin/
+obj/
+*.user
+*.suo
+
+# Ignore App.config & Properties
+App.config
+**/App.config
+Properties/
+**/Properties/
